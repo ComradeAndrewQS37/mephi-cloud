@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Speech to Text</title>
+</head>
+<body>
+<h2>Speech to Text (CMU Sphinx)</h2>
+
+<form id="uploadForm">
+    <input type="file" id="audio" required>
+    <select id="language">
+        <option value="en">English</option>
+        <option value="ru">Russian</option>
+    </select>
+    <button type="submit">Upload</button>
+</form>
+
+<pre id="result">Waiting...</pre>
+
+<script>
+const MANAGER_URL = "http://192.168.0.1:8000";
+
+document.getElementById("uploadForm").onsubmit = async (e) => {
+    e.preventDefault();
+
+    const file = document.getElementById("audio").files[0];
+    const lang = document.getElementById("language").value;
+    const formData = new FormData();
+
+    formData.append("audio", file);
+    formData.append("language", lang);
+
+    const res = await fetch(`${MANAGER_URL}/api/v1/transcriptions`, {
+        method: "POST",
+        body: formData
+    });
+
+    const data = await res.json();
+    pollResult(data.id);
+};
+
+async function pollResult(id) {
+    const interval = setInterval(async () => {
+        const res = await fetch(`${MANAGER_URL}/api/v1/transcriptions/${id}`);
+        const data = await res.json();
+
+        if (data.status === "DONE") {
+            document.getElementById("result").innerText = data.text;
+            clearInterval(interval);
+        } else {
+            document.getElementById("result").innerText =
+                "Status: " + data.status;
+        }
+    }, 5000);
+}
+</script>
+</body>
+</html>
