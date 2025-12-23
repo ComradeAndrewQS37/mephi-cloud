@@ -1,17 +1,48 @@
 #!/bin/bash
 
 sudo apt update
-sudo apt install -y openjdk21-jre
+sudo apt install -y openjdk-11-jdk
 
-cd /opt
-wget https://dlcdn.apache.org/kafka/4.1.1/kafka-4.1.1-src.tgz
-tar -xzf kafka-4.1.1-src.tgz
-cd kafka-4.1.1-src
+mkdir ~/downloads
+cd ~/downloads
+wget https://archive.apache.org/dist/kafka/3.4.0/kafka_2.12-3.4.0.tgz
 
-bin/zookeeper-server-start.sh -daemon config/zookeeper.properties
-bin/kafka-server-start.sh -daemon config/server.properties
+cd ~
+tar -xvzf ~/downloads/kafka_2.12-3.4.0.tgz
+mv kafka_2.12-3.4.0/ kafka/
 
-bin/kafka-topics.sh --create --topic speech-to-text.requests \
- --bootstrap-server localhost:9092
-bin/kafka-topics.sh --create --topic speech-to-text.responses \
- --bootstrap-server localhost:9092
+cat > "/etc/systemd/system/zookeeper.service" <<EOF
+[Unit]
+Description=Apache Zookeeper Service
+Requires=network.target
+After=network.target
+
+[Service]
+Type=simple
+User=kafka
+ExecStart=/home/kafka/kafka/bin/zookeeper-server-start.sh /home/kafka/kafka/config/zookeeper.properties
+ExecStop=/home/kafka/kafka/bin/zookeeper-server-stop.sh
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+cat > "/etc/systemd/system/kafka.service" <<EOF
+[[Unit]
+Description=Apache Kafka Service that requires zookeeper service
+Requires=zookeeper.service
+After=zookeeper.service
+
+[Service]
+Type=simple
+User=kafka
+ExecStart= /home/kafka/kafka/bin/kafka-server-start.sh /home/kafka/kafka/config/server.properties
+ExecStop=/home/kafka/kafka/bin/kafka-server-stop.sh
+Restart=on-abnormal
+
+[Install]
+WantedBy=multi-user.target
+EOF
+
+sudo systemctl start kafka
