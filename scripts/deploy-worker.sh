@@ -16,7 +16,7 @@ wget -O /opt/worker.py "https://raw.githubusercontent.com/ComradeAndrewQS37/meph
 pip3 install pocketsphinx confluent-kafka
 
 # Переменная Kafka
-export KAFKA_BOOTSTRAP_SERVERS="<KAFKA_IP>:9092"
+export KAFKA_BOOTSTRAP_SERVERS="10.20.15.236:9092"
 
 # Systemd-сервис
 cat > /etc/systemd/system/transcribe-worker.service <<EOF

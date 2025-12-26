@@ -16,8 +16,8 @@ wget -O /opt/manager.py "https://raw.githubusercontent.com/ComradeAndrewQS37/mep
 pip3 install fastapi uvicorn sqlalchemy psycopg2-binary confluent-kafka
 
 # Переменные (настрой под себя!)
-export POSTGRES_URL="postgresql://transcribe_user:transcribe_pass@<POSTGRES_IP>:5432/transcribe_db"
-export KAFKA_BOOTSTRAP_SERVERS="<KAFKA_IP>:9092"
+export POSTGRES_URL="postgresql://transcribe_user:transcribe_pass@10.20.15.235:5432/transcribe_db"
+export KAFKA_BOOTSTRAP_SERVERS="10.20.15.236:9092"
 
 # Запуск через systemd (упрощённо — можно сделать полноценный unit)
 cat > /etc/systemd/system/transcribe-manager.service <<EOF
