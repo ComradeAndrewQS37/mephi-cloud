@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Аудио → Текст</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 600px; margin: 30px auto; }
+    input[type="file"] { margin: 10px 0; }
+    button { padding: 8px 16px; margin: 10px 0; }
+    #result { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h2>Загрузите аудиофайл (WAV, 16kHz, моно)</h2>
+  <form id="uploadForm">
+    <input type="file" id="audioFile" accept=".wav" required>
+    <br>
+    <button type="submit">Расшифровать</button>
+  </form>
+
+  <div id="status"></div>
+  <div id="result"></div>
+
+  <script>
+    // Заменить на реальный адрес менеджера при развёртывании
+    const MANAGER_API = "http://localhost:8000";
+
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const file = document.getElementById('audioFile').files[0];
+      if (!file) return;
+
+      const formData = new FormData();
+      formData.append('audio', file);
+
+      try {
+        document.getElementById('status').innerText = "Отправка...";
+        const response = await fetch(`${MANAGER_API}/transcribe`, {
+          method: 'POST',
+          body: formData
+        });
+
+        if (!response.ok) throw new Error('Ошибка при отправке');
+
+        const data = await response.json();
+        const taskId = data.task_id;
+        document.getElementById('status').innerText = `Задача создана: ${taskId}. Ожидание результата...`;
+
+        // Polling результата
+        const pollInterval = setInterval(async () => {
+          const resultRes = await fetch(`${MANAGER_API}/result/${taskId}`);
+          const result = await resultRes.json();
+
+          if (result.status === 'completed') {
+            clearInterval(pollInterval);
+            document.getElementById('status').innerText = "Готово!";
+            document.getElementById('result').innerText = result.text;
+          } else if (result.status === 'failed') {
+            clearInterval(pollInterval);
+            document.getElementById('status').innerText = "Ошибка обработки.";
+          }
+          // иначе — продолжаем опрашивать
+        }, 2000);
+      } catch (err) {
+        document.getElementById('status').innerText = "Ошибка: " + err.message;
+      }
+    });
+  </script>
+</body>
+</html>
